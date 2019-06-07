@@ -67,9 +67,9 @@ class ElasticsearchEngineTest extends PHPUnit_Framework_TestCase
                             ['match_phrase' => ['foo' => 1]],
                             ['terms' => ['bar' => [1, 3]]],
                         ]
-                    ],
-                    'track_scores' => true,
+                    ], 
                 ],
+                'track_scores' => 1,
                 'sort' => [
                     ['id' => ['order' => 'desc']]
                 ]
