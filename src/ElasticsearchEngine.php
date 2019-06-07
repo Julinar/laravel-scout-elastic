@@ -15,7 +15,7 @@ class ElasticsearchEngine extends Engine
      * @var string
      */
     protected $index;
-    
+
     /**
      * Elastic where the instance of Elastic|\Elasticsearch\Client is stored.
      *
@@ -117,7 +117,7 @@ class ElasticsearchEngine extends Engine
             'size' => $perPage,
         ]);
 
-       $result['nbPages'] = $result['hits']['total']/$perPage;
+       $result['nbPages'] = $result['hits']['total']['value']/$perPage;
 
         return $result;
     }
@@ -139,13 +139,18 @@ class ElasticsearchEngine extends Engine
                     'bool' => [
                         'must' => [['query_string' => [ 'query' => "*{$builder->query}*"]]]
                     ]
-                ]
+                ],
+                'track_scores' => true,
             ]
         ];
 
+
         if ($sort = $this->sort($builder)) {
+
             $params['body']['sort'] = $sort;
+
         }
+
 
         if (isset($options['from'])) {
             $params['body']['from'] = $options['from'];
@@ -217,10 +222,12 @@ class ElasticsearchEngine extends Engine
         $keys = collect($results['hits']['hits'])->pluck('_id')->values()->all();
 
         return $model->getScoutModelsByIds(
-                $builder, $keys
-            )->filter(function ($model) use ($keys) {
-                return in_array($model->getScoutKey(), $keys);
-            });
+            $builder, $keys
+        )->filter(function ($model) use ($keys) {
+            return in_array($model->getScoutKey(), $keys);
+        })->sortBy(function($model) use ($keys) {
+            return array_search($model->getScoutKey(), $keys);
+        });
     }
 
     /**
@@ -231,7 +238,7 @@ class ElasticsearchEngine extends Engine
      */
     public function getTotalCount($results)
     {
-        return $results['hits']['total'];
+        return $results['hits']['total']['value'];
     }
 
     /**
@@ -258,9 +265,8 @@ class ElasticsearchEngine extends Engine
         if (count($builder->orders) == 0) {
             return null;
         }
-
         return collect($builder->orders)->map(function($order) {
-            return [$order['column'] => $order['direction']];
-        })->toArray();
+            return [$order['column'] => ['order' => $order['direction']]];
+        })->toArray()[0];
     }
 }
