@@ -173,6 +173,8 @@ class ElasticsearchEngine extends Engine
                 $params
             );
         }
+        
+        var_dump($params);
 
         return $this->elastic->search($params);
     }
